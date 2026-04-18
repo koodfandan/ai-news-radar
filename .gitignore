@@ -8,6 +8,9 @@
 .env.local
 *.env
 
+# Local config (may contain real API keys)
+config.yaml
+
 # Python
 __pycache__/
 *.py[cod]
