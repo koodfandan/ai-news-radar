@@ -48,18 +48,34 @@
 
 ## 🚀 快速开始
 
-### 1. 安装依赖
+### 系统要求
+
+- **操作系统**：Windows 10/11（系统托盘通知仅支持 Windows）
+- **Python**：3.10 或以上
+- **网络**：需要能访问 GitHub、HuggingFace、Nitter 等境外网站
+
+### 1. 克隆并安装依赖
+
+推荐使用虚拟环境，避免依赖冲突：
 
 ```bash
 git clone https://github.com/koodfandan/ai-news-radar.git
 cd ai-news-radar
+
+# 创建并激活虚拟环境（推荐）
+python -m venv .venv
+.venv\Scripts\activate       # Windows
+# source .venv/bin/activate  # macOS/Linux
+
+# 安装依赖
 pip install -r requirements.txt
 ```
 
 ### 2. 配置
 
 ```bash
-copy config.example.yaml config.yaml
+copy config.example.yaml config.yaml   # Windows
+# cp config.example.yaml config.yaml   # macOS/Linux
 ```
 
 编辑 `config.yaml`，按需填入 LLM API（可选，不填则不翻译）：
@@ -70,6 +86,8 @@ llm:
   api_key: "sk-your-key"
   model: "deepseek-chat"
 ```
+
+> 支持的 LLM：DeepSeek、OpenAI、月之暗面 Kimi、阿里云通义、Ollama（本地）等任意 OpenAI 兼容接口。
 
 ### 3. 启动
 
