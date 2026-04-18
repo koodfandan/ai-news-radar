@@ -1,0 +1,40 @@
+# Database
+*.db
+*.db-journal
+*.sqlite
+
+# Environment variables
+.env
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.venv/
+venv/
+env/
+.Python
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+mark_breaking_test.py
+
+# Temp files
+*.bak
+*.corrupted
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

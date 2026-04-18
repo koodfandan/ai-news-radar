@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 日报</title>
+    <link rel="stylesheet" href="/static/style.css?v=20260419c">
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1 class="logo">AI 日报</h1>
+        </div>
+        <div class="sidebar-search">
+            <input type="text" id="search-input" placeholder="搜索资讯..." />
+        </div>
+        <nav class="sidebar-nav">
+            <a class="nav-item active" data-page="home" onclick="switchPage('home')">
+                <span class="nav-icon">📰</span>
+                <span class="nav-label">今日日报</span>
+            </a>
+            <a class="nav-item" data-page="breaking" onclick="switchPage('breaking')">
+                <span class="nav-icon">🔥</span>
+                <span class="nav-label">突发新闻</span>
+                <span class="nav-badge breaking-badge" id="badge-breaking"></span>
+            </a>
+            <a class="nav-item" data-page="hot-topics" onclick="switchPage('hot-topics')">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">AI 热点</span>
+            </a>
+            <div class="nav-divider"></div>
+            <div class="nav-section-header" onclick="toggleNavSection('twitter-news-section')">🐦 AI新闻推特 <span class="nav-toggle" id="toggle-twitter-news-section">▶</span></div>
+            <div class="nav-sub-group" id="twitter-news-section">
+                <a class="nav-item nav-sub" data-page="twitter-news-en" onclick="switchPage('twitter-news-en')">
+                    <span class="nav-label">🇬🇧 英文区</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="twitter-news-zh" onclick="switchPage('twitter-news-zh')">
+                    <span class="nav-label">🇨🇳 中文区</span>
+                </a>
+            </div>
+            <div class="nav-section-header" onclick="toggleNavSection('twitter-exp-section')">💡 AI经验与资源 <span class="nav-toggle" id="toggle-twitter-exp-section">▶</span></div>
+            <div class="nav-sub-group" id="twitter-exp-section">
+                <a class="nav-item nav-sub" data-page="twitter-exp-en" onclick="switchPage('twitter-exp-en')">
+                    <span class="nav-label">🇬🇧 英文区</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="twitter-exp-zh" onclick="switchPage('twitter-exp-zh')">
+                    <span class="nav-label">🇨🇳 中文区</span>
+                </a>
+            </div>
+            <div class="nav-divider"></div>
+            <div class="nav-section-header" onclick="toggleNavSection('en-section')">📰 英文信息源 <span class="nav-toggle" id="toggle-en-section">▶</span></div>
+            <a class="nav-item" data-page="en-sources" onclick="switchPage('en-sources')">
+                <span class="nav-icon">🌐</span>
+                <span class="nav-label">全部英文</span>
+                <span class="nav-badge" id="badge-en-sources"></span>
+            </a>
+            <div class="nav-sub-group" id="en-section">
+                <a class="nav-item nav-sub" data-page="hackernews" onclick="switchPage('hackernews')">
+                    <span class="nav-label">HackerNews</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="reddit" onclick="switchPage('reddit')">
+                    <span class="nav-label">Reddit</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="github" onclick="switchPage('github')">
+                    <span class="nav-label">GitHub</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="huggingface" onclick="switchPage('huggingface')">
+                    <span class="nav-label">HuggingFace</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="producthunt" onclick="switchPage('producthunt')">
+                    <span class="nav-label">ProductHunt</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="techcrunch" onclick="switchPage('techcrunch')">
+                    <span class="nav-label">TechCrunch</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="theverge" onclick="switchPage('theverge')">
+                    <span class="nav-label">The Verge</span>
+                </a>
+            </div>
+            <div class="nav-divider"></div>
+            <div class="nav-section-header" onclick="toggleNavSection('zh-section')">📰 中文信息源 <span class="nav-toggle" id="toggle-zh-section">▶</span></div>
+            <a class="nav-item" data-page="zh-sources" onclick="switchPage('zh-sources')">
+                <span class="nav-icon">🇨🇳</span>
+                <span class="nav-label">全部中文</span>
+                <span class="nav-badge" id="badge-zh-sources"></span>
+            </a>
+            <div class="nav-sub-group" id="zh-section">
+                <a class="nav-item nav-sub" data-page="leiphone" onclick="switchPage('leiphone')">
+                    <span class="nav-label">AI科技评论</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="36kr" onclick="switchPage('36kr')">
+                    <span class="nav-label">36氪</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="sspai" onclick="switchPage('sspai')">
+                    <span class="nav-label">少数派</span>
+                </a>
+                <a class="nav-item nav-sub" data-page="ifanr" onclick="switchPage('ifanr')">
+                    <span class="nav-label">爱范儿</span>
+                </a>
+            </div>
+            <div class="nav-divider"></div>
+            <a class="nav-item" data-page="starred" onclick="switchPage('starred')">
+                <span class="nav-icon">⭐</span>
+                <span class="nav-label">我的收藏</span>
+            </a>
+            <a class="nav-item" data-page="sources" onclick="switchPage('sources')">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">信息源管理</span>
+            </a>
+            <a class="nav-item" data-page="ai-settings" onclick="switchPage('ai-settings')">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">AI 翻译设置</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()" title="切换暗色模式">🌙</button>
+            <span id="stats-info">0 条未读</span>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main">
+        <!-- 移动端菜单按钮 -->
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="sidebar-overlay hidden" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <!-- 突发提醒横条 -->
+        <div class="breaking-bar hidden" id="breaking-bar">
+            <span class="breaking-label">🔴 突发</span>
+            <span class="breaking-text" id="breaking-text"></span>
+            <button class="breaking-close" onclick="dismissBreaking()">✕</button>
+        </div>
+
+        <!-- Toast通知 -->
+        <div class="toast-container" id="toast-container"></div>
+
+        <!-- 首页：今日日报 -->
+        <div class="page" id="page-home">
+            <div class="page-header">
+                <h2 class="page-title">今日精选</h2>
+                <div class="date-controls">
+                    <button onclick="changeDate(-1)">← 前一天</button>
+                    <span class="current-date" id="current-date"></span>
+                    <button id="next-btn" onclick="changeDate(1)">后一天 →</button>
+                </div>
+            </div>
+            <div class="digest-tabs" id="digest-tabs">
+                <button class="digest-tab active" data-tab="all" onclick="switchDigestTab('all')">🔥 精选</button>
+                <button class="digest-tab" data-tab="twitter" onclick="switchDigestTab('twitter')">🐦 推特</button>
+                <button class="digest-tab" data-tab="github" onclick="switchDigestTab('github')">💻 GitHub</button>
+                <button class="digest-tab" data-tab="huggingface" onclick="switchDigestTab('huggingface')">🤗 HuggingFace</button>
+                <button class="digest-tab" data-tab="news" onclick="switchDigestTab('news')">📰 新闻</button>
+                <button class="digest-tab" data-tab="zh-media" onclick="switchDigestTab('zh-media')">📱 中文媒体</button>
+            </div>
+            <div id="home-digest-list" class="digest-list"></div>
+        </div>
+
+        <!-- 分类详情页（共用模板） -->
+        <div class="page hidden" id="page-category">
+            <div class="page-header">
+                <h2 class="page-title" id="cat-page-title"></h2>
+                <div class="filter-tabs">
+                    <button class="tab active" data-filter="all" onclick="setFilter('all',this)">全部</button>
+                    <button class="tab" data-filter="unread" onclick="setFilter('unread',this)">未读</button>
+                    <button class="tab" data-filter="starred" onclick="setFilter('starred',this)">已收藏</button>
+                </div>
+            </div>
+            <div class="item-list" id="cat-item-list"></div>
+        </div>
+
+        <!-- 突发新闻页 -->
+        <div class="page hidden" id="page-breaking">
+        </div>
+
+        <!-- AI热点页 -->
+        <div class="page hidden" id="page-hot-topics">
+        </div>
+
+        <!-- 收藏页 -->
+        <div class="page hidden" id="page-starred">
+            <div class="page-header">
+                <h2 class="page-title">⭐ 我的收藏</h2>
+            </div>
+            <div class="item-list" id="starred-list"></div>
+        </div>
+
+        <!-- 信息源管理页 -->
+        <div class="page hidden" id="page-sources">
+            <div class="page-header">
+                <h2 class="page-title">⚙️ 信息源管理</h2>
+            </div>
+            <div class="sources-form">
+                <div class="form-row">
+                    <select id="sub-type">
+                        <option value="twitter">🐦 Twitter 账号</option>
+                        <option value="reddit">💬 Reddit 版块</option>
+                        <option value="rss">📑 RSS 订阅</option>
+                        <option value="github">💻 GitHub</option>
+                        <option value="huggingface">🤗 HuggingFace</option>
+                        <option value="producthunt">🚀 ProductHunt</option>
+                    </select>
+                    <input type="text" id="sub-value" placeholder="输入用户名/链接..." />
+                    <input type="text" id="sub-label" placeholder="备注名称(可选)" />
+                    <button onclick="addSubscription()">添加</button>
+                </div>
+                <p class="form-hint">Twitter: 输入用户名如 karpathy · Reddit: 输入版块如 MachineLearning · RSS: 输入完整URL</p>
+            </div>
+            <div class="sources-list" id="sources-list"></div>
+        </div>
+
+        <!-- AI 翻译设置页 -->
+        <div class="page hidden" id="page-ai-settings">
+            <div class="page-header">
+                <h2 class="page-title">🤖 AI 翻译设置</h2>
+            </div>
+            <p style="color:var(--text-muted);margin-bottom:16px;font-size:0.88em">配置 LLM API 后，英文资讯将自动翻译为中文并生成一句话摘要。选择一个预设快速填入，或手动输入自定义 API。</p>
+
+            <div style="margin-bottom:16px">
+                <label style="font-size:0.85em;font-weight:600;display:block;margin-bottom:8px">⚡ 快速选择预设</label>
+                <div style="display:flex;flex-wrap:wrap;gap:8px" id="llm-presets"></div>
+            </div>
+
+            <div style="padding:16px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius)">
+                <div class="form-row" style="margin-bottom:10px">
+                    <label style="min-width:90px;font-size:0.85em;font-weight:600">API Base</label>
+                    <input type="text" id="llm-api-base" placeholder="https://api.deepseek.com/v1" style="flex:1" />
+                </div>
+                <div class="form-row" style="margin-bottom:10px">
+                    <label style="min-width:90px;font-size:0.85em;font-weight:600">API Key</label>
+                    <input type="password" id="llm-api-key" placeholder="sk-..." style="flex:1" />
+                    <button onclick="document.getElementById('llm-api-key').type=document.getElementById('llm-api-key').type==='password'?'text':'password'" style="padding:6px 10px;font-size:0.82em;background:var(--bg-warm);color:var(--text);border:1px solid var(--border)">👁</button>
+                </div>
+                <div class="form-row" style="margin-bottom:10px">
+                    <label style="min-width:90px;font-size:0.85em;font-weight:600">Model</label>
+                    <input type="text" id="llm-model" placeholder="deepseek-chat" style="flex:1" />
+                </div>
+                <div class="form-row" style="align-items:center">
+                    <button onclick="saveLlmSettings()">💾 保存</button>
+                    <button onclick="testLlm()" style="background:var(--green)">🔗 测试连接</button>
+                    <span id="llm-status" style="font-size:0.85em;color:var(--text-muted);margin-left:8px"></span>
+                </div>
+            </div>
+
+            <div style="margin-top:16px;padding:12px;background:var(--bg-warm);border-radius:var(--radius);font-size:0.82em;color:var(--text-muted)">
+                <strong>💡 提示：</strong>保存后需重启应用才能生效。翻译功能会在每次轮询时自动对新抓取的英文内容进行翻译。
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/app.js?v=20260419c"></script>
+</body>
+</html>

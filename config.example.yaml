@@ -1,0 +1,78 @@
+polling_interval_minutes: 15
+
+llm:
+  api_base: "https://api.deepseek.com/v1"
+  api_key: "your-api-key-here"
+  model: "deepseek-chat"
+
+notifications:
+  enabled: true
+  quiet_hours:
+    start: "23:00"
+    end: "07:00"
+
+web:
+  host: "127.0.0.1"
+  port: 8080
+
+sources:
+  twitter:
+    enabled: true
+    nitter_instances:
+      - "https://nitter.net"
+      - "https://nitter.privacydev.net"
+    accounts:
+      - "sama"
+      - "ylecun"
+      - "kaboriminals"
+      - "DrJimFan"
+      - "_akhaliq"
+
+  hackernews:
+    enabled: true
+    min_score: 50
+    keywords:
+      - "AI"
+      - "LLM"
+      - "GPT"
+      - "Claude"
+      - "machine learning"
+      - "OpenAI"
+      - "Anthropic"
+      - "Google DeepMind"
+      - "Gemini"
+      - "deep learning"
+
+  reddit:
+    enabled: true
+    subreddits:
+      - "MachineLearning"
+      - "artificial"
+      - "LocalLLaMA"
+    min_score: 100
+
+  github:
+    enabled: true
+    languages: []
+    keywords:
+      - "llm"
+      - "ai"
+      - "machine-learning"
+      - "gpt"
+      - "transformer"
+
+  rss:
+    enabled: true
+    feeds:
+      - name: "TechCrunch AI"
+        url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+      - name: "The Verge AI"
+        url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+
+  producthunt:
+    enabled: true
+
+  huggingface:
+    enabled: true
+
+custom_rss: []
