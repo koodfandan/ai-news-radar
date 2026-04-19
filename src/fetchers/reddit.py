@@ -2,33 +2,33 @@ from src.fetchers.base import BaseFetcher
 from src.models import NewsItem
 from datetime import datetime, timezone
 import httpx
-import feedparser
-from time import mktime
 import logging
 
 logger = logging.getLogger(__name__)
+
+MAX_PER_SUB = 20  # top-N per subreddit
 
 
 class RedditFetcher(BaseFetcher):
     source_name = "reddit"
 
-    def __init__(self, subreddits: list[str] | None = None, min_score: int = 100):
+    def __init__(self, subreddits: list[str] | None = None, min_score: int = 50):
         self.subreddits = subreddits or ["MachineLearning", "artificial", "LocalLLaMA"]
         self.min_score = min_score
 
-    async def _fetch_rss(self, url: str) -> str | None:
+    async def _fetch_json(self, url: str) -> dict | None:
         try:
             async with httpx.AsyncClient(
                 timeout=30,
                 follow_redirects=True,
                 headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-                    "Accept": "application/rss+xml, application/xml, text/xml, */*",
+                    "User-Agent": "AI-News-Radar/1.0",
+                    "Accept": "application/json",
                 }
             ) as client:
                 resp = await client.get(url)
                 resp.raise_for_status()
-                return resp.text
+                return resp.json()
         except Exception as e:
             logger.error(f"[{self.source_name}] Failed to fetch {url}: {e}")
             return None
@@ -36,31 +36,47 @@ class RedditFetcher(BaseFetcher):
     async def fetch(self) -> list[NewsItem]:
         items = []
         for sub in self.subreddits:
-            url = f"https://www.reddit.com/r/{sub}/hot.rss?limit=25"
-            text = await self._fetch_rss(url)
-            if not text or ('<entry>' not in text and '<item>' not in text):
-                logger.warning(f"No RSS data for r/{sub}")
+            url = f"https://www.reddit.com/r/{sub}/hot.json?limit=50"
+            data = await self._fetch_json(url)
+            if not data:
                 continue
 
-            parsed = feedparser.parse(text)
-            for entry in parsed.entries[:25]:
-                pub_date = None
-                if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    pub_date = datetime.fromtimestamp(mktime(entry.published_parsed), tz=timezone.utc)
-                elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
-                    pub_date = datetime.fromtimestamp(mktime(entry.updated_parsed), tz=timezone.utc)
+            try:
+                posts = data["data"]["children"]
+            except (KeyError, TypeError):
+                logger.warning(f"[reddit] Unexpected response for r/{sub}")
+                continue
 
-                link = entry.get("link", "")
-                title = entry.get("title", "")[:300]
-                content = entry.get("summary", entry.get("description", ""))[:500]
-                author = entry.get("author", entry.get("dc_creator", ""))
+            sub_items = []
+            for post in posts:
+                p = post.get("data", {})
+                score = p.get("score", 0)
+                if score < self.min_score:
+                    continue
+                title = p.get("title", "")[:300]
+                url_post = p.get("url", "")
+                permalink = "https://www.reddit.com" + p.get("permalink", "")
+                author = p.get("author", "")
+                created_utc = p.get("created_utc")
+                selftext = p.get("selftext", "")[:500]
+                content = selftext if selftext else title
 
-                items.append(NewsItem.new(
+                created_at = None
+                if created_utc:
+                    created_at = datetime.fromtimestamp(created_utc, tz=timezone.utc)
+
+                sub_items.append(NewsItem.new(
                     source=f"reddit/r/{sub}",
-                    source_url=link,
+                    source_url=url_post or permalink,
                     title=title,
                     content=content,
                     author=author,
-                    created_at=pub_date,
+                    score=score,
+                    created_at=created_at,
                 ))
+
+            # sort by score, take top-N
+            sub_items.sort(key=lambda x: x.score or 0, reverse=True)
+            items.extend(sub_items[:MAX_PER_SUB])
+
         return items

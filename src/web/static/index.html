@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 日报</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/style.css?v=20260419c">
 </head>
 <body>
@@ -163,6 +164,12 @@
                     <button class="tab active" data-filter="all" onclick="setFilter('all',this)">全部</button>
                     <button class="tab" data-filter="unread" onclick="setFilter('unread',this)">未读</button>
                     <button class="tab" data-filter="starred" onclick="setFilter('starred',this)">已收藏</button>
+                </div>
+                <div class="time-range-tabs" id="time-range-tabs" style="display:flex;gap:4px;margin-top:8px;">
+                    <button class="tab" data-range="1d" onclick="setTimeRange('1d',this)">24小时</button>
+                    <button class="tab" data-range="3d" onclick="setTimeRange('3d',this)">3天</button>
+                    <button class="tab" data-range="7d" onclick="setTimeRange('7d',this)">7天</button>
+                    <button class="tab" data-range="all" onclick="setTimeRange('all',this)">全部</button>
                 </div>
             </div>
             <div class="item-list" id="cat-item-list"></div>

@@ -27,6 +27,18 @@ logs/
 
 # Test artifacts
 mark_breaking_test.py
+_check_db.py
+_make_favicon.py
+build_*.txt
+debug*.txt
+stderr.txt
+stdout.txt
+icon_preview*.png
+
+# PyInstaller
+dist/
+build/
+*.spec
 
 # Temp files
 *.bak

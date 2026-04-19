@@ -68,15 +68,18 @@ class Radar:
             return
 
         logger.info("Starting polling cycle...")
-        all_items = []
 
-        for fetcher in self.fetchers:
+        async def _safe_fetch(fetcher):
             try:
                 items = await fetcher.fetch()
                 logger.info(f"[{fetcher.source_name}] fetched {len(items)} items")
-                all_items.extend(items)
+                return items
             except Exception as e:
                 logger.error(f"[{fetcher.source_name}] fetch failed: {e}")
+                return []
+
+        results = await asyncio.gather(*[_safe_fetch(f) for f in self.fetchers])
+        all_items = [item for sublist in results for item in sublist]
 
         new_items = await self.dedup.filter(all_items)
         logger.info(f"After dedup: {len(new_items)} new items (from {len(all_items)} total)")
@@ -103,7 +106,7 @@ class Radar:
 
         # 通知：突发新闻单独发，其他普通批量发
         if breaking_items:
-            self.notifier.notify_breaking([item for item, _, _ in breaking_items])
+            self.notifier.notify_breaking([item for item, _, _, _ in breaking_items])
         non_breaking = [i for i in new_items if not getattr(i, 'is_breaking', False)]
         if non_breaking:
             self.notifier.notify_batch(non_breaking)

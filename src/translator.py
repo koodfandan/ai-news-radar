@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 import json
 import logging
@@ -50,11 +51,16 @@ class Translator:
             return title, content[:200]
 
     async def translate_batch(self, items: list) -> list:
-        """Translate a batch of NewsItems in place."""
-        for item in items:
+        """Translate a batch of NewsItems concurrently (max 5 parallel LLM calls)."""
+        sem = asyncio.Semaphore(5)
+
+        async def _translate_one(item):
             if item.title_zh:
-                continue
-            title_zh, summary_zh = await self.translate(item.title, item.content)
+                return
+            async with sem:
+                title_zh, summary_zh = await self.translate(item.title, item.content)
             item.title_zh = title_zh
             item.summary_zh = summary_zh
+
+        await asyncio.gather(*[_translate_one(item) for item in items])
         return items

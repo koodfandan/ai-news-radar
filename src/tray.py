@@ -1,16 +1,26 @@
 import pystray
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import webbrowser
 import logging
+import sys
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
 def _create_icon_image():
-    """Create a simple radar icon."""
+    """Load icon from file, or draw a simple fallback icon."""
+    _meipass = Path(getattr(sys, '_MEIPASS', ''))
+    _base = Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).parent.parent
+    for p in [_meipass / 'icon.ico', _base / 'icon.ico']:
+        try:
+            if p.exists():
+                return Image.open(str(p)).resize((64, 64))
+        except Exception:
+            pass
+    # Fallback: draw a simple radar icon
     img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    # Draw concentric circles
     draw.ellipse([8, 8, 56, 56], outline='#e94560', width=2)
     draw.ellipse([18, 18, 46, 46], outline='#e94560', width=2)
     draw.ellipse([28, 28, 36, 36], fill='#e94560')

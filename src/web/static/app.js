@@ -5,6 +5,7 @@ let allItems = [];
 let currentDate = new Date();
 let currentPage = 'home';
 let currentFilter = 'all';
+let currentTimeRange = localStorage.getItem('timeRange') || '3d'; // '1d', '3d', '7d', 'all'
 let currentCategory = '';
 let previousItemIds = new Set();
 let refreshTimer = null;
@@ -41,6 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeBtn) themeBtn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
 
     updateDateDisplay();
+    // Initialize active time range tab
+    document.querySelectorAll('.time-range-tabs .tab').forEach(t => {
+        if (t.dataset.range === currentTimeRange) t.classList.add('active');
+    });
     load();
     loadStats();
     startRefresh();
@@ -510,6 +515,7 @@ function renderCategory(cat) {
     document.getElementById('cat-page-title').textContent = titles[cat] || cat;
 
     let items = getCategoryItems(cat);
+    items = getTimeRangeFilter(items);
 
     if (currentFilter === 'unread') items = items.filter(i => !i.is_read);
     if (currentFilter === 'starred') items = items.filter(i => i.is_starred);
@@ -528,6 +534,7 @@ function renderLangPage(lang) {
     document.getElementById('page-category').classList.remove('hidden');
 
     let items = allItems.filter(i => getLang(i) === lang).sort(byScore);
+    items = getTimeRangeFilter(items);
 
     if (currentFilter === 'unread') items = items.filter(i => !i.is_read);
     if (currentFilter === 'starred') items = items.filter(i => i.is_starred);
@@ -583,6 +590,7 @@ function renderTwitterCategoryPage(page) {
     if (currentFilter === 'unread') items = items.filter(i => !i.is_read);
     if (currentFilter === 'starred') items = items.filter(i => i.is_starred);
 
+    items = getTimeRangeFilter(items);
     renderItemList(items, document.getElementById('cat-item-list'));
 }
 
@@ -918,6 +926,30 @@ function setFilter(filter, btn) {
     document.querySelectorAll('.filter-tabs .tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     renderCategory(currentCategory);
+}
+
+function setTimeRange(range, btn) {
+    currentTimeRange = range;
+    localStorage.setItem('timeRange', range);
+    document.querySelectorAll('.time-range-tabs .tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    else {
+        document.querySelectorAll('.time-range-tabs .tab').forEach(t => {
+            if (t.dataset.range === range) t.classList.add('active');
+        });
+    }
+    renderCurrentPage();
+}
+
+function getTimeRangeFilter(items) {
+    if (currentTimeRange === 'all') return items;
+    const now = Date.now();
+    const hours = currentTimeRange === '1d' ? 24 : currentTimeRange === '3d' ? 72 : 168;
+    const cutoff = now - hours * 3600 * 1000;
+    return items.filter(i => {
+        const t = new Date(i.fetched_at || i.created_at).getTime();
+        return t >= cutoff;
+    });
 }
 
 // ==============================
