@@ -1,4 +1,5 @@
 import json
+import sys
 import uuid
 import yaml
 from datetime import date, datetime
@@ -10,8 +11,14 @@ from pathlib import Path
 from src.database import Database
 
 
-SUBSCRIPTIONS_FILE = Path(__file__).parent.parent.parent / "data" / "subscriptions.json"
-CONFIG_FILE = Path(__file__).parent.parent.parent / "config.yaml"
+# 确定配置文件路径（打包后在 exe 目录，开发时在项目根目录）
+if getattr(sys, 'frozen', False):
+    _base_dir = Path(sys.executable).parent
+else:
+    _base_dir = Path(__file__).parent.parent.parent
+
+SUBSCRIPTIONS_FILE = _base_dir / "data" / "subscriptions.json"
+CONFIG_FILE = _base_dir / "config.yaml"
 
 
 class SubscriptionCreate(BaseModel):
@@ -279,15 +286,25 @@ def create_app(db: Database, config=None) -> FastAPI:
             api_key = llm.get("api_key", "")
             model = llm.get("model", "")
             if not api_key or api_key == "your-api-key-here":
-                return {"ok": False, "message": "请先配置 API Key"}
+                return {"ok": False, "message": f"请先配置 API Key（配置文件路径: {CONFIG_FILE}）"}
             async with httpx.AsyncClient(timeout=15) as client:
                 resp = await client.post(
                     f"{api_base}/chat/completions",
                     headers={"Authorization": f"Bearer {api_key}"},
                     json={"model": model, "messages": [{"role": "user", "content": "Say hi"}], "max_tokens": 10},
                 )
+                if resp.status_code == 401:
+                    return {"ok": False, "message": "API Key 无效（401 未授权）"}
+                elif resp.status_code == 404:
+                    return {"ok": False, "message": f"接口地址错误（404），请检查 API Base: {api_base}"}
+                elif resp.status_code >= 400:
+                    return {"ok": False, "message": f"请求失败 HTTP {resp.status_code}: {resp.text[:200]}"}
                 resp.raise_for_status()
                 return {"ok": True, "message": "连接成功！翻译功能将在下次轮询时自动运行"}
+        except httpx.ConnectError as e:
+            return {"ok": False, "message": f"无法连接到服务器，请检查 API Base 地址是否正确: {str(e)[:150]}"}
+        except httpx.TimeoutException:
+            return {"ok": False, "message": "连接超时（15秒），请检查网络或 API 地址"}
         except Exception as e:
             return {"ok": False, "message": f"连接失败: {str(e)[:200]}"}
 
