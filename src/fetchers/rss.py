@@ -1,6 +1,6 @@
 from src.fetchers.base import BaseFetcher
 from src.models import NewsItem
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import feedparser
 from time import mktime
 
@@ -8,12 +8,16 @@ from time import mktime
 class RSSFetcher(BaseFetcher):
     source_name = "rss"
 
-    def __init__(self, feeds: list[dict]):
+    def __init__(self, feeds: list[dict], max_age_hours: int | None = 48):
         """feeds: [{"name": "TechCrunch AI", "url": "https://..."}]"""
         self.feeds = feeds
+        self.max_age_hours = max_age_hours
 
     async def fetch(self) -> list[NewsItem]:
         items = []
+        cutoff = None
+        if self.max_age_hours is not None:
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=self.max_age_hours)
         for feed_info in self.feeds:
             text = await self._get_text(feed_info["url"])
             if not text:
@@ -23,6 +27,11 @@ class RSSFetcher(BaseFetcher):
                 pub_date = None
                 if hasattr(entry, 'published_parsed') and entry.published_parsed:
                     pub_date = datetime.fromtimestamp(mktime(entry.published_parsed), tz=timezone.utc)
+                elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
+                    pub_date = datetime.fromtimestamp(mktime(entry.updated_parsed), tz=timezone.utc)
+
+                if cutoff and pub_date and pub_date < cutoff:
+                    continue
 
                 items.append(NewsItem.new(
                     source=feed_info["name"],

@@ -1,12 +1,12 @@
 from src.fetchers.base import BaseFetcher
 from src.models import NewsItem
 from datetime import datetime, timezone
-import httpx
+import feedparser
 import logging
 
 logger = logging.getLogger(__name__)
 
-MAX_PER_SUB = 20  # top-N per subreddit
+MAX_PER_SUB = 25
 
 
 class RedditFetcher(BaseFetcher):
@@ -16,67 +16,41 @@ class RedditFetcher(BaseFetcher):
         self.subreddits = subreddits or ["MachineLearning", "artificial", "LocalLLaMA"]
         self.min_score = min_score
 
-    async def _fetch_json(self, url: str) -> dict | None:
-        try:
-            async with httpx.AsyncClient(
-                timeout=30,
-                follow_redirects=True,
-                headers={
-                    "User-Agent": "AI-News-Radar/1.0",
-                    "Accept": "application/json",
-                }
-            ) as client:
-                resp = await client.get(url)
-                resp.raise_for_status()
-                return resp.json()
-        except Exception as e:
-            logger.error(f"[{self.source_name}] Failed to fetch {url}: {e}")
-            return None
-
     async def fetch(self) -> list[NewsItem]:
         items = []
         for sub in self.subreddits:
-            url = f"https://www.reddit.com/r/{sub}/hot.json?limit=50"
-            data = await self._fetch_json(url)
-            if not data:
+            url = f"https://old.reddit.com/r/{sub}/.rss"
+            text = await self._get_text(url)
+            if not text:
                 continue
 
-            try:
-                posts = data["data"]["children"]
-            except (KeyError, TypeError):
+            parsed = feedparser.parse(text)
+            if not parsed.entries:
                 logger.warning(f"[reddit] Unexpected response for r/{sub}")
                 continue
 
             sub_items = []
-            for post in posts:
-                p = post.get("data", {})
-                score = p.get("score", 0)
-                if score < self.min_score:
-                    continue
-                title = p.get("title", "")[:300]
-                url_post = p.get("url", "")
-                permalink = "https://www.reddit.com" + p.get("permalink", "")
-                author = p.get("author", "")
-                created_utc = p.get("created_utc")
-                selftext = p.get("selftext", "")[:500]
-                content = selftext if selftext else title
+            for entry in parsed.entries[:MAX_PER_SUB]:
+                title = entry.get("title", "")[:300]
+                author = (entry.get("author", "") or "").replace("/u/", "")
+                content = entry.get("summary", entry.get("description", ""))[:500]
 
                 created_at = None
-                if created_utc:
-                    created_at = datetime.fromtimestamp(created_utc, tz=timezone.utc)
+                parsed_time = getattr(entry, "updated_parsed", None) or getattr(entry, "published_parsed", None)
+                if parsed_time:
+                    created_at = datetime(*parsed_time[:6], tzinfo=timezone.utc)
 
                 sub_items.append(NewsItem.new(
                     source=f"reddit/r/{sub}",
-                    source_url=url_post or permalink,
+                    source_url=entry.get("link", ""),
                     title=title,
                     content=content,
                     author=author,
-                    score=score,
+                    score=0,
                     created_at=created_at,
                 ))
 
-            # sort by score, take top-N
-            sub_items.sort(key=lambda x: x.score or 0, reverse=True)
-            items.extend(sub_items[:MAX_PER_SUB])
+            sub_items.sort(key=lambda x: x.created_at, reverse=True)
+            items.extend(sub_items)
 
         return items

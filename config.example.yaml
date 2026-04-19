@@ -1,4 +1,4 @@
-polling_interval_minutes: 15
+polling_interval_minutes: 30
 
 llm:
   api_base: "https://api.deepseek.com/v1"
@@ -20,7 +20,10 @@ sources:
     enabled: true
     nitter_instances:
       - "https://nitter.net"
-      - "https://nitter.privacydev.net"
+      - "https://nitter.privacyredirect.com"
+      - "https://lightbrd.com"
+      - "https://nitter.poast.org"
+      - "https://xcancel.com"
     accounts:
       - "sama"
       - "ylecun"

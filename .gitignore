@@ -38,6 +38,8 @@ icon_preview*.png
 # PyInstaller
 dist/
 build/
+dist-*/
+build-*/
 *.spec
 
 # Temp files

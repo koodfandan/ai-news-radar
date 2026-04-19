@@ -12,16 +12,20 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_NITTER_INSTANCES = [
     "https://nitter.net",
-    "https://xcancel.com",
     "https://nitter.privacyredirect.com",
-    "https://nuku.trabun.org",
     "https://lightbrd.com",
     "https://nitter.poast.org",
+    "https://xcancel.com",
+    "https://nuku.trabun.org",
 ]
 
 # Global health cache: {instance: (ok: bool, checked_at: float)}
 _instance_health: dict[str, tuple[bool, float]] = {}
-_HEALTH_TTL = 600  # 10 minutes
+_account_failures: dict[str, tuple[int, float]] = {}
+_HEALTH_TTL = 300
+_ACCOUNT_FAILURE_LIMIT = 5
+_ACCOUNT_COOLDOWN_SECONDS = 1800
+_PROBE_ACCOUNT = "OpenAI"
 
 MAX_PER_ACCOUNT = 10
 
@@ -34,14 +38,25 @@ class TwitterFetcher(BaseFetcher):
         self.nitter_instances = nitter_instances or DEFAULT_NITTER_INSTANCES
 
     async def _probe_instance(self, instance: str) -> bool:
-        """Quick probe to check if Nitter instance is alive."""
+        """Probe the RSS endpoint directly so HTML landing pages do not count as healthy."""
         cached = _instance_health.get(instance)
         if cached and time.time() - cached[1] < _HEALTH_TTL:
             return cached[0]
         try:
-            async with httpx.AsyncClient(timeout=8, follow_redirects=True) as client:
-                resp = await client.get(f"{instance}/x", headers={"User-Agent": "AI-News-Radar/1.0"})
-                ok = resp.status_code < 500
+            async with httpx.AsyncClient(
+                timeout=8,
+                follow_redirects=True,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-News-Radar/1.0",
+                    "Accept": "application/rss+xml, application/xml, text/xml, */*",
+                },
+            ) as client:
+                resp = await client.get(f"{instance}/{_PROBE_ACCOUNT}/rss")
+                ok = (
+                    resp.status_code < 400
+                    and ('<item>' in resp.text or '<entry>' in resp.text)
+                    and 'RSS reader not yet whitelisted' not in resp.text
+                )
         except Exception:
             ok = False
         _instance_health[instance] = (ok, time.time())
@@ -89,7 +104,33 @@ class TwitterFetcher(BaseFetcher):
                 items.extend(r)
         return items
 
+    def _should_skip_account(self, account: str) -> bool:
+        state = _account_failures.get(account.lower())
+        if not state:
+            return False
+        failures, retry_after = state
+        if failures < _ACCOUNT_FAILURE_LIMIT:
+            return False
+        if time.time() >= retry_after:
+            _account_failures.pop(account.lower(), None)
+            return False
+        return True
+
+    def _record_account_failure(self, account: str):
+        key = account.lower()
+        failures, _ = _account_failures.get(key, (0, 0.0))
+        failures += 1
+        retry_after = time.time() + _ACCOUNT_COOLDOWN_SECONDS if failures >= _ACCOUNT_FAILURE_LIMIT else 0.0
+        _account_failures[key] = (failures, retry_after)
+
+    def _clear_account_failure(self, account: str):
+        _account_failures.pop(account.lower(), None)
+
     async def _fetch_account(self, account: str, instances: list[str]) -> list[NewsItem]:
+        if self._should_skip_account(account):
+            logger.warning(f"[twitter] Skipping @{account} after repeated fetch failures")
+            return []
+
         for instance in instances:
             url = f"{instance}/{account}/rss"
             text = await self._fetch_rss(url)
@@ -119,6 +160,8 @@ class TwitterFetcher(BaseFetcher):
                     created_at=pub_date,
                 ))
             logger.info(f"[twitter] {instance} fetched {len(results)} tweets for @{account}")
+            self._clear_account_failure(account)
             return results
+        self._record_account_failure(account)
         logger.error(f"[twitter] All instances failed for @{account}")
         return []

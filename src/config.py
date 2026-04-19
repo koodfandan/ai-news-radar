@@ -93,7 +93,7 @@ class SourcesConfig:
 
 @dataclass
 class AppConfig:
-    polling_interval_minutes: int = 15
+    polling_interval_minutes: int = 30
     llm: LLMConfig = field(default_factory=LLMConfig)
     notifications: NotificationConfig = field(default_factory=NotificationConfig)
     web: WebConfig = field(default_factory=WebConfig)
